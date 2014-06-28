@@ -1,5 +1,6 @@
 
-** SD - a slightly more friendly wrapper for sdfatlib **
+SD - a slightly more friendly wrapper for sdfatlib
+==================================================
 
 This library aims to expose a subset of SD card functionality in the
 form of a higher level "wrapper" object.
