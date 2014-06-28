@@ -29,107 +29,94 @@
 #include "Sd2Card.h"
 #include "FatStructs.h"
 #include "Print.h"
-//------------------------------------------------------------------------------
+
 /**
  * Allow use of deprecated functions if non-zero
  */
 #define ALLOW_DEPRECATED_FUNCTIONS 1
-//------------------------------------------------------------------------------
+
 // forward declaration since SdVolume is used in SdFile
 class SdVolume;
-//==============================================================================
+
 // SdFile class
 
 // flags for ls()
-/** ls() flag to print modify date */
-uint8_t const LS_DATE = 1;
-/** ls() flag to print file size */
-uint8_t const LS_SIZE = 2;
-/** ls() flag for recursive list of subdirectories */
-uint8_t const LS_R = 4;
+uint8_t const LS_DATE = 1;  // ls() flag to print modify date
+uint8_t const LS_SIZE = 2;  // ls() flag to print file size
+uint8_t const LS_R = 4;     // ls() flag for recursive list of subdirectories
 
 // use the gnu style oflag in open()
-/** open() oflag for reading */
-uint8_t const O_READ = 0X01;
-/** open() oflag - same as O_READ */
-uint8_t const O_RDONLY = O_READ;
-/** open() oflag for write */
-uint8_t const O_WRITE = 0X02;
-/** open() oflag - same as O_WRITE */
-uint8_t const O_WRONLY = O_WRITE;
-/** open() oflag for reading and writing */
-uint8_t const O_RDWR = (O_READ | O_WRITE);
-/** open() oflag mask for access modes */
-uint8_t const O_ACCMODE = (O_READ | O_WRITE);
-/** The file offset shall be set to the end of the file prior to each write. */
-uint8_t const O_APPEND = 0X04;
-/** synchronous writes - call sync() after each write */
-uint8_t const O_SYNC = 0X08;
-/** create the file if nonexistent */
-uint8_t const O_CREAT = 0X10;
-/** If O_CREAT and O_EXCL are set, open() shall fail if the file exists */
-uint8_t const O_EXCL = 0X20;
-/** truncate the file to zero length */
-uint8_t const O_TRUNC = 0X40;
+uint8_t const O_READ = 0X01;                  // open() oflag for reading
+uint8_t const O_RDONLY = O_READ;              // open() oflag - same as O_READ
+uint8_t const O_WRITE = 0X02;                 // open() oflag for write
+uint8_t const O_WRONLY = O_WRITE;             // open() oflag - same as O_WRITE
+uint8_t const O_RDWR = (O_READ | O_WRITE);    // open() oflag for reading and writing
+uint8_t const O_ACCMODE = (O_READ | O_WRITE); // open() oflag mask for access modes
+uint8_t const O_APPEND = 0X04;                // The file offset shall be set to the end of the file prior to each write.
+uint8_t const O_SYNC = 0X08;                  // synchronous writes - call sync() after each write
+uint8_t const O_CREAT = 0X10;                 // create the file if nonexistent
+uint8_t const O_EXCL = 0X20;                  // If O_CREAT and O_EXCL are set, open() shall fail if the file exists
+uint8_t const O_TRUNC = 0X40;                 // truncate the file to zero length
 
 // flags for timestamp
-/** set the file's last access date */
-uint8_t const T_ACCESS = 1;
-/** set the file's creation date and time */
-uint8_t const T_CREATE = 2;
-/** Set the file's write date and time */
-uint8_t const T_WRITE = 4;
-// values for type_
-/** This SdFile has not been opened. */
-uint8_t const FAT_FILE_TYPE_CLOSED = 0;
-/** SdFile for a file */
-uint8_t const FAT_FILE_TYPE_NORMAL = 1;
-/** SdFile for a FAT16 root directory */
-uint8_t const FAT_FILE_TYPE_ROOT16 = 2;
-/** SdFile for a FAT32 root directory */
-uint8_t const FAT_FILE_TYPE_ROOT32 = 3;
-/** SdFile for a subdirectory */
-uint8_t const FAT_FILE_TYPE_SUBDIR = 4;
-/** Test value for directory type */
-uint8_t const FAT_FILE_TYPE_MIN_DIR = FAT_FILE_TYPE_ROOT16;
+uint8_t const T_ACCESS = 1;                   // set the file's last access date
+uint8_t const T_CREATE = 2;                   // set the file's creation date and time
+uint8_t const T_WRITE = 4;                    // Set the file's write date and time
 
-/** date field for FAT directory entry */
+// values for type_
+uint8_t const FAT_FILE_TYPE_CLOSED = 0;                     // This SdFile has not been opened.
+uint8_t const FAT_FILE_TYPE_NORMAL = 1;                     // SdFile for a file
+uint8_t const FAT_FILE_TYPE_ROOT16 = 2;                     // SdFile for a FAT16 root directory
+uint8_t const FAT_FILE_TYPE_ROOT32 = 3;                     // SdFile for a FAT32 root directory
+uint8_t const FAT_FILE_TYPE_SUBDIR = 4;                     // SdFile for a subdirectory
+uint8_t const FAT_FILE_TYPE_MIN_DIR = FAT_FILE_TYPE_ROOT16; // Test value for directory type
+
+// date field for FAT directory entry
 static inline uint16_t FAT_DATE(uint16_t year, uint8_t month, uint8_t day) {
   return (year - 1980) << 9 | month << 5 | day;
 }
-/** year part of FAT directory date field */
+
+// year part of FAT directory date field
 static inline uint16_t FAT_YEAR(uint16_t fatDate) {
   return 1980 + (fatDate >> 9);
 }
-/** month part of FAT directory date field */
+
+// month part of FAT directory date field
 static inline uint8_t FAT_MONTH(uint16_t fatDate) {
   return (fatDate >> 5) & 0XF;
 }
-/** day part of FAT directory date field */
+
+// day part of FAT directory date field
 static inline uint8_t FAT_DAY(uint16_t fatDate) {
   return fatDate & 0X1F;
 }
-/** time field for FAT directory entry */
+
+// time field for FAT directory entry
 static inline uint16_t FAT_TIME(uint8_t hour, uint8_t minute, uint8_t second) {
   return hour << 11 | minute << 5 | second >> 1;
 }
-/** hour part of FAT directory time field */
+
+// hour part of FAT directory time field
 static inline uint8_t FAT_HOUR(uint16_t fatTime) {
   return fatTime >> 11;
 }
-/** minute part of FAT directory time field */
+
+// minute part of FAT directory time field
 static inline uint8_t FAT_MINUTE(uint16_t fatTime) {
   return(fatTime >> 5) & 0X3F;
 }
-/** second part of FAT directory time field */
+
+// second part of FAT directory time field
 static inline uint8_t FAT_SECOND(uint16_t fatTime) {
   return 2*(fatTime & 0X1F);
 }
-/** Default date for file timestamps is 1 Jan 2000 */
+
+// Default date for file timestamps is 1 Jan 2000
 uint16_t const FAT_DEFAULT_DATE = ((2000 - 1980) << 9) | (1 << 5) | 1;
-/** Default time for file timestamp is 1 am */
+
+// Default time for file timestamp is 1 am
 uint16_t const FAT_DEFAULT_TIME = (1 << 11);
-//------------------------------------------------------------------------------
+
 /**
  * \class SdFile
  * \brief Access FAT16 and FAT32 files on SD and SDHC cards.
@@ -292,7 +279,7 @@ class SdFile : public Print {
   void write_P(PGM_P str);
   void writeln_P(PGM_P str);
 #endif
-//------------------------------------------------------------------------------
+
 #if ALLOW_DEPRECATED_FUNCTIONS
 // Deprecated functions  - suppress cpplint warnings with NOLINT comment
   /** \deprecated Use:
@@ -356,7 +343,7 @@ class SdFile : public Print {
   static uint8_t remove(SdFile& dirFile, const char* fileName) {  // NOLINT
     return remove(&dirFile, fileName);
   }
-//------------------------------------------------------------------------------
+
 // rest are private
  private:
   static void (*oldDateTime_)(uint16_t& date, uint16_t& time);  // NOLINT
@@ -404,7 +391,7 @@ class SdFile : public Print {
   uint8_t openCachedEntry(uint8_t cacheIndex, uint8_t oflags);
   dir_t* readDirCache(void);
 };
-//==============================================================================
+
 // SdVolume class
 /**
  * \brief Cache for an SD data block
@@ -423,7 +410,7 @@ union cache_t {
            /** Used to access to a cached FAT boot sector. */
   fbs_t    fbs;
 };
-//------------------------------------------------------------------------------
+
 /**
  * \class SdVolume
  * \brief Access FAT16 and FAT32 volumes on SD and SDHC cards.
@@ -478,7 +465,7 @@ class SdVolume {
   uint32_t rootDirStart(void) const {return rootDirStart_;}
   /** return a pointer to the Sd2Card object for this volume */
   static Sd2Card* sdCard(void) {return sdCard_;}
-//------------------------------------------------------------------------------
+
 #if ALLOW_DEPRECATED_FUNCTIONS
   // Deprecated functions  - suppress cpplint warnings with NOLINT comment
   /** \deprecated Use: uint8_t SdVolume::init(Sd2Card* dev); */
@@ -489,7 +476,7 @@ class SdVolume {
     return init(&dev, part);
   }
 #endif  // ALLOW_DEPRECATED_FUNCTIONS
-//------------------------------------------------------------------------------
+
   private:
   // Allow SdFile access to SdVolume private data.
   friend class SdFile;
@@ -504,19 +491,19 @@ class SdVolume {
   static Sd2Card* sdCard_;            // Sd2Card object for cache
   static uint8_t cacheDirty_;         // cacheFlush() will write block if true
   static uint32_t cacheMirrorBlock_;  // block number for mirror FAT
-//
-  uint32_t allocSearchStart_;   // start cluster for alloc search
-  uint8_t blocksPerCluster_;    // cluster size in blocks
-  uint32_t blocksPerFat_;       // FAT size in blocks
-  uint32_t clusterCount_;       // clusters in one FAT
-  uint8_t clusterSizeShift_;    // shift to convert cluster count to block count
-  uint32_t dataStartBlock_;     // first data block number
-  uint8_t fatCount_;            // number of FATs on volume
-  uint32_t fatStartBlock_;      // start block for first FAT
-  uint8_t fatType_;             // volume type (12, 16, OR 32)
-  uint16_t rootDirEntryCount_;  // number of entries in FAT16 root dir
-  uint32_t rootDirStart_;       // root start block for FAT16, cluster for FAT32
-  //----------------------------------------------------------------------------
+
+  uint32_t allocSearchStart_;         // start cluster for alloc search
+  uint8_t blocksPerCluster_;          // cluster size in blocks
+  uint32_t blocksPerFat_;             // FAT size in blocks
+  uint32_t clusterCount_;             // clusters in one FAT
+  uint8_t clusterSizeShift_;          // shift to convert cluster count to block count
+  uint32_t dataStartBlock_;           // first data block number
+  uint8_t fatCount_;                  // number of FATs on volume
+  uint32_t fatStartBlock_;            // start block for first FAT
+  uint8_t fatType_;                   // volume type (12, 16, OR 32)
+  uint16_t rootDirEntryCount_;        // number of entries in FAT16 root dir
+  uint32_t rootDirStart_;             // root start block for FAT16, cluster for FAT32
+
   uint8_t allocContiguous(uint32_t count, uint32_t* curCluster);
   uint8_t blockOfCluster(uint32_t position) const {
           return (position >> 9) & (blocksPerCluster_ - 1);}

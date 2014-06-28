@@ -38,15 +38,14 @@ uint8_t const SCK_PIN = SCK;
 #define Sd2PinMap_h
 #include <avr/io.h>
 
-//------------------------------------------------------------------------------
-/** struct for mapping digital pins */
+// struct for mapping digital pins
 struct pin_map_t {
   volatile uint8_t* ddr;
   volatile uint8_t* pin;
   volatile uint8_t* port;
   uint8_t bit;
 };
-//------------------------------------------------------------------------------
+
 #if defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
 // Mega
 
@@ -132,7 +131,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRK, &PINK, &PORTK, 6},  // K6 68
   {&DDRK, &PINK, &PORTK, 7}   // K7 69
 };
-//------------------------------------------------------------------------------
+
 #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__)
 // Sanguino
 
@@ -180,7 +179,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRA, &PINA, &PORTA, 1},  // A1 30
   {&DDRA, &PINA, &PORTA, 0}   // A0 31
 };
-//------------------------------------------------------------------------------
+
 #elif defined(__AVR_ATmega32U4__)
 // Leonardo
 
@@ -220,7 +219,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRF, &PINF, &PORTF, 1},  // F1 22
   {&DDRF, &PINF, &PORTF, 0},  // F0 23
 };
-//------------------------------------------------------------------------------
+
 #elif defined(__AVR_AT90USB646__) || defined(__AVR_AT90USB1286__)
 // Teensy++ 1.0 & 2.0
 
@@ -282,7 +281,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRF, &PINF, &PORTF, 6},  // F6 44
   {&DDRF, &PINF, &PORTF, 7}   // F7 45
 };
-//------------------------------------------------------------------------------
+
 #else  // defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
 // 168 and 328 Arduinos
 
@@ -319,7 +318,7 @@ static const pin_map_t digitalPinMap[] = {
   {&DDRC, &PINC, &PORTC, 5}   // C5 19
 };
 #endif  // defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-//------------------------------------------------------------------------------
+
 static const uint8_t digitalPinCount = sizeof(digitalPinMap)/sizeof(pin_map_t);
 
 uint8_t badPinNumber(void)

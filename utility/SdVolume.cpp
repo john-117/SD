@@ -18,42 +18,30 @@
  * <http://www.gnu.org/licenses/>.
  */
 #include "SdFat.h"
-//------------------------------------------------------------------------------
-// raw block cache
-// init cacheBlockNumber_to invalid SD block number
+
+// raw block cache - init cacheBlockNumber_to invalid SD block number
 uint32_t SdVolume::cacheBlockNumber_ = 0XFFFFFFFF;
-cache_t  SdVolume::cacheBuffer_;     // 512 byte cache for Sd2Card
-Sd2Card* SdVolume::sdCard_;          // pointer to SD card object
-uint8_t  SdVolume::cacheDirty_ = 0;  // cacheFlush() will write block if true
-uint32_t SdVolume::cacheMirrorBlock_ = 0;  // mirror  block for second FAT
-//------------------------------------------------------------------------------
+cache_t  SdVolume::cacheBuffer_;            // 512 byte cache for Sd2Card
+Sd2Card* SdVolume::sdCard_;                 // pointer to SD card object
+uint8_t  SdVolume::cacheDirty_ = 0;         // cacheFlush() will write block if true
+uint32_t SdVolume::cacheMirrorBlock_ = 0;   // mirror  block for second FAT
+
 // find a contiguous group of clusters
 uint8_t SdVolume::allocContiguous(uint32_t count, uint32_t* curCluster) {
-  // start of group
-  uint32_t bgnCluster;
-
-  // flag to save place to start next search
-  uint8_t setStart;
+  uint32_t bgnCluster;  // start of group
+  uint8_t setStart;     // flag to save place to start next search
 
   // set search start cluster
   if (*curCluster) {
-    // try to make file contiguous
-    bgnCluster = *curCluster + 1;
-
-    // don't save new start location
-    setStart = false;
+    bgnCluster = *curCluster + 1;       // try to make file contiguous
+    setStart = false;                   // don't save new start location
   } else {
-    // start at likely place for free cluster
-    bgnCluster = allocSearchStart_;
-
-    // save next search start if one cluster
-    setStart = 1 == count;
+    bgnCluster = allocSearchStart_;     // start at likely place for free cluster
+    setStart = 1 == count;              // save next search start if one cluster
   }
-  // end of group
-  uint32_t endCluster = bgnCluster;
 
-  // last cluster of FAT
-  uint32_t fatEnd = clusterCount_ + 1;
+  uint32_t endCluster = bgnCluster;     // end of group
+  uint32_t fatEnd = clusterCount_ + 1;  // last cluster of FAT
 
   // search the FAT for free clusters
   for (uint32_t n = 0;; n++, endCluster++) {
@@ -95,7 +83,7 @@ uint8_t SdVolume::allocContiguous(uint32_t count, uint32_t* curCluster) {
 
   return true;
 }
-//------------------------------------------------------------------------------
+
 uint8_t SdVolume::cacheFlush(void) {
   if (cacheDirty_) {
     if (!sdCard_->writeBlock(cacheBlockNumber_, cacheBuffer_.data)) {
@@ -112,7 +100,7 @@ uint8_t SdVolume::cacheFlush(void) {
   }
   return true;
 }
-//------------------------------------------------------------------------------
+
 uint8_t SdVolume::cacheRawBlock(uint32_t blockNumber, uint8_t action) {
   if (cacheBlockNumber_ != blockNumber) {
     if (!cacheFlush()) return false;
@@ -122,7 +110,7 @@ uint8_t SdVolume::cacheRawBlock(uint32_t blockNumber, uint8_t action) {
   cacheDirty_ |= action;
   return true;
 }
-//------------------------------------------------------------------------------
+
 // cache a zero block for blockNumber
 uint8_t SdVolume::cacheZeroBlock(uint32_t blockNumber) {
   if (!cacheFlush()) return false;
@@ -135,7 +123,7 @@ uint8_t SdVolume::cacheZeroBlock(uint32_t blockNumber) {
   cacheSetDirty();
   return true;
 }
-//------------------------------------------------------------------------------
+
 // return the size in bytes of a cluster chain
 uint8_t SdVolume::chainSize(uint32_t cluster, uint32_t* size) const {
   uint32_t s = 0;
@@ -146,7 +134,7 @@ uint8_t SdVolume::chainSize(uint32_t cluster, uint32_t* size) const {
   *size = s;
   return true;
 }
-//------------------------------------------------------------------------------
+
 // Fetch a FAT entry
 uint8_t SdVolume::fatGet(uint32_t cluster, uint32_t* value) const {
   if (cluster > (clusterCount_ + 1)) return false;
@@ -162,7 +150,7 @@ uint8_t SdVolume::fatGet(uint32_t cluster, uint32_t* value) const {
   }
   return true;
 }
-//------------------------------------------------------------------------------
+
 // Store a FAT entry
 uint8_t SdVolume::fatPut(uint32_t cluster, uint32_t value) {
   // error if reserved cluster
@@ -190,7 +178,7 @@ uint8_t SdVolume::fatPut(uint32_t cluster, uint32_t value) {
   if (fatCount_ > 1) cacheMirrorBlock_ = lba + blocksPerFat_;
   return true;
 }
-//------------------------------------------------------------------------------
+
 // free a cluster chain
 uint8_t SdVolume::freeChain(uint32_t cluster) {
   // clear free cluster location
@@ -208,7 +196,7 @@ uint8_t SdVolume::freeChain(uint32_t cluster) {
 
   return true;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Initialize a FAT volume.
  *

@@ -24,7 +24,7 @@
 #include "WProgram.h"
 #endif
 #include "Sd2Card.h"
-//------------------------------------------------------------------------------
+
 #ifdef __arm__
 static int8_t mosiPin_, misoPin_, clockPin_;
 static volatile RwReg *mosiport, *clkport, *misoport;
@@ -35,16 +35,15 @@ static volatile uint8_t *mosiport, *clkport, *misoport;
 static uint8_t mosipinmask, clkpinmask, misopinmask;
 #endif
 
-//------------------------------------------------------------------------------
-/** nop to tune soft SPI timing */
+// nop to tune soft SPI timing
 #define nop asm volatile ("nop\n\t")
 
 #ifndef SOFTWARE_SPI
   #ifdef USE_SPI_LIB
     #include <SPI.h>
   #endif
-  // functions for hardware SPI
-  /** Send a byte to the card */
+
+  // functions for hardware SPI Send a byte to the card
   static void spiSend(uint8_t b) {
     if (clockPin_ == -1) {
       #ifndef USE_SPI_LIB
@@ -55,6 +54,7 @@ static uint8_t mosipinmask, clkpinmask, misopinmask;
       #endif
     } else {
       noInterrupts();
+
       // Fast SPI bitbang swiped from LPD8806 library
       for (uint8_t i = 0; i < 8; i++) {
         *clkport &= ~clkpinmask;
@@ -67,11 +67,12 @@ static uint8_t mosipinmask, clkpinmask, misopinmask;
       }
       nop;nop;nop;nop;
       *clkport &= ~clkpinmask;
-      
+
       interrupts();
     }
   }
-  /** Receive a byte from the card */
+
+  // Receive a byte from the card
   static  uint8_t spiRec(void) {
   if (clockPin_ == -1) {
     #ifndef USE_SPI_LIB
@@ -82,20 +83,19 @@ static uint8_t mosipinmask, clkpinmask, misopinmask;
     #endif
   } else {
     uint8_t data = 0;
-    // no interrupts during byte receive - about 8 us
-    noInterrupts();
-    // output pin high - like sending 0XFF
-    *mosiport |= mosipinmask;
-    
+
+    noInterrupts();           // no interrupts during byte receive - about 8 us
+    *mosiport |= mosipinmask; // output pin high - like sending 0XFF
+
     for (uint8_t i = 0; i < 8; i++) {
       *clkport |=  clkpinmask;
       data <<= 1;
-      
+
       //if (fastDigitalRead(SPI_MISO_PIN)) data |= 1;
       if ((*misoport) & misopinmask)  data |= 1;
-      
+
       *clkport &=  ~clkpinmask;
-      
+
       // adjust so SCK is nice
       nop;
       nop;
@@ -103,17 +103,16 @@ static uint8_t mosipinmask, clkpinmask, misopinmask;
     // enable interrupts
     interrupts();
     return data;
-    } 
+    }
   }
 #else  // SOFTWARE_SPI
-  //------------------------------------------------------------------------------
-  /** Soft SPI receive */
+
+  // Soft SPI receive
   uint8_t spiRec(void) {
     uint8_t data = 0;
-    // no interrupts during byte receive - about 8 us
-    cli();
-    // output pin high - like sending 0XFF
-    fastDigitalWrite(SPI_MOSI_PIN, HIGH);
+
+    cli();                                // no interrupts during byte receive - about 8 us
+    fastDigitalWrite(SPI_MOSI_PIN, HIGH); // output pin high - like sending 0XFF
 
     for (uint8_t i = 0; i < 8; i++) {
       fastDigitalWrite(SPI_SCK_PIN, HIGH);
@@ -128,15 +127,15 @@ static uint8_t mosipinmask, clkpinmask, misopinmask;
 
       fastDigitalWrite(SPI_SCK_PIN, LOW);
     }
-    // enable interrupts
-    sei();
+
+    sei();                                // enable interrupts
     return data;
   }
-  //------------------------------------------------------------------------------
-  /** Soft SPI send */
+
+  // Soft SPI send
   void spiSend(uint8_t data) {
-    // no interrupts during byte send - about 8 us
-    cli();
+
+    cli();                                // no interrupts during byte send - about 8 us
     for (uint8_t i = 0; i < 8; i++) {
       fastDigitalWrite(SPI_SCK_PIN, LOW);
 
@@ -146,19 +145,18 @@ static uint8_t mosipinmask, clkpinmask, misopinmask;
 
       fastDigitalWrite(SPI_SCK_PIN, HIGH);
     }
-    // hold SCK high for a few ns
-    nop;
+
+    nop;                                // hold SCK high for a few ns
     nop;
     nop;
     nop;
 
     fastDigitalWrite(SPI_SCK_PIN, LOW);
-    // enable interrupts
-    sei();
+    sei();                              // enable interrupts
   }
 #endif  // SOFTWARE_SPI
-//------------------------------------------------------------------------------
-// send command and return error code.  Return zero for OK
+
+// send command and return error code. Return zero for OK
 uint8_t Sd2Card::cardCommand(uint8_t cmd, uint32_t arg) {
   // end read if in partialBlockRead mode
   readEnd();
@@ -185,7 +183,7 @@ uint8_t Sd2Card::cardCommand(uint8_t cmd, uint32_t arg) {
   for (uint8_t i = 0; ((status_ = spiRec()) & 0X80) && i != 0XFF; i++);
   return status_;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Determine the size of an SD flash memory card.
  *
@@ -211,15 +209,15 @@ uint32_t Sd2Card::cardSize(void) {
     return 0;
   }
 }
-//------------------------------------------------------------------------------
+
 void Sd2Card::chipSelectHigh(void) {
   digitalWrite(chipSelectPin_, HIGH);
 }
-//------------------------------------------------------------------------------
+
 void Sd2Card::chipSelectLow(void) {
   digitalWrite(chipSelectPin_, LOW);
 }
-//------------------------------------------------------------------------------
+
 /** Erase a range of blocks.
  *
  * \param[in] firstBlock The address of the first block in the range.
@@ -259,7 +257,7 @@ uint8_t Sd2Card::erase(uint32_t firstBlock, uint32_t lastBlock) {
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /** Determine if card supports single block erase.
  *
  * \return The value one, true, is returned if single block erase is supported.
@@ -269,7 +267,7 @@ uint8_t Sd2Card::eraseSingleBlockEnable(void) {
   csd_t csd;
   return readCSD(&csd) ? csd.v1.erase_blk_en : 0;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Initialize an SD flash memory card.
  *
@@ -293,7 +291,7 @@ uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin, 
   // set pin modes
   pinMode(chipSelectPin_, OUTPUT);
   chipSelectHigh();
-  
+
   if (clockPin != -1) {
     // use slow bitbang mode
     pinMode(misoPin_, INPUT);
@@ -381,7 +379,7 @@ uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin, 
 #ifndef SOFTWARE_SPI
   if (clockPin_ == -1)
     return setSckRate(sckRateID);
-  else 
+  else
     return true;
 #else  // SOFTWARE_SPI
   return true;
@@ -391,7 +389,7 @@ uint8_t Sd2Card::init(uint8_t sckRateID, uint8_t chipSelectPin, int8_t mosiPin, 
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Enable or disable partial block reads.
  *
@@ -409,7 +407,7 @@ void Sd2Card::partialBlockRead(uint8_t value) {
   readEnd();
   partialBlockRead_ = value;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Read a 512 byte block from an SD card device.
  *
@@ -422,7 +420,7 @@ void Sd2Card::partialBlockRead(uint8_t value) {
 uint8_t Sd2Card::readBlock(uint32_t block, uint8_t* dst) {
   return readData(block, 0, 512, dst);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Read part of a 512 byte block from an SD card.
  *
@@ -498,7 +496,7 @@ uint8_t Sd2Card::readData(uint32_t block,
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /** Skip remaining data in a block when in partial block read mode. */
 void Sd2Card::readEnd(void) {
   if (inBlock_) {
@@ -519,7 +517,7 @@ void Sd2Card::readEnd(void) {
     inBlock_ = 0;
   }
 }
-//------------------------------------------------------------------------------
+
 /** read CID or CSR register */
 uint8_t Sd2Card::readRegister(uint8_t cmd, void* buf) {
   uint8_t* dst = reinterpret_cast<uint8_t*>(buf);
@@ -539,7 +537,7 @@ uint8_t Sd2Card::readRegister(uint8_t cmd, void* buf) {
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Set the SPI clock rate.
  *
@@ -586,7 +584,7 @@ uint8_t Sd2Card::setSckRate(uint8_t sckRateID) {
 #endif // USE_SPI_LIB
   return true;
 }
-//------------------------------------------------------------------------------
+
 // wait for card to go not busy
 uint8_t Sd2Card::waitNotBusy(uint16_t timeoutMillis) {
   uint16_t t0 = millis();
@@ -596,7 +594,7 @@ uint8_t Sd2Card::waitNotBusy(uint16_t timeoutMillis) {
   while (((uint16_t)millis() - t0) < timeoutMillis);
   return false;
 }
-//------------------------------------------------------------------------------
+
 /** Wait for start block token */
 uint8_t Sd2Card::waitStartBlock(void) {
   uint16_t t0 = millis();
@@ -616,7 +614,7 @@ uint8_t Sd2Card::waitStartBlock(void) {
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Writes a 512 byte block to an SD card.
  *
@@ -659,7 +657,7 @@ uint8_t Sd2Card::writeBlock(uint32_t blockNumber, const uint8_t* src) {
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /** Write one data block in a multiple block write sequence */
 uint8_t Sd2Card::writeData(const uint8_t* src) {
   // wait for previous write to finish
@@ -670,10 +668,10 @@ uint8_t Sd2Card::writeData(const uint8_t* src) {
   }
   return writeData(WRITE_MULTIPLE_TOKEN, src);
 }
-//------------------------------------------------------------------------------
+
 // send one block of data for write block or write multiple blocks
 uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
-  
+
   // CRC16 checksum is supposed to be ignored in SPI mode (unless
   // explicitly enabled) and a dummy value is normally written.
   // A few funny cards (e.g. Eye-Fi X2) expect a valid CRC anyway.
@@ -714,7 +712,7 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
     spiSend(src[i]);
   }
 #endif  // OPTIMIZE_HARDWARE_SPI
-  
+
   spiSend(crc >> 8); // Might be dummy value, that's OK
   spiSend(crc);
 
@@ -726,7 +724,7 @@ uint8_t Sd2Card::writeData(uint8_t token, const uint8_t* src) {
   }
   return true;
 }
-//------------------------------------------------------------------------------
+
 /** Start a write multiple blocks sequence.
  *
  * \param[in] blockNumber Address of first block in sequence.
@@ -763,7 +761,7 @@ uint8_t Sd2Card::writeStart(uint32_t blockNumber, uint32_t eraseCount) {
   chipSelectHigh();
   return false;
 }
-//------------------------------------------------------------------------------
+
 /** End a write multiple blocks sequence.
  *
 * \return The value one, true, is returned for success and
@@ -785,4 +783,3 @@ uint8_t Sd2Card::writeStop(void) {
 void Sd2Card::enableCRC(uint8_t mode) {
   writeCRC_ = mode;
 }
-

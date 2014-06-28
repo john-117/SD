@@ -26,16 +26,16 @@
 #include <Arduino.h>
 #ifdef __AVR__
 #include <avr/pgmspace.h>
-/** Store and print a string in flash memory.*/
-#define PgmPrint(x) SerialPrint_P(PSTR(x))
-/** Store and print a string in flash memory followed by a CR/LF.*/
-#define PgmPrintln(x) SerialPrintln_P(PSTR(x))
-/** Defined so doxygen works for function definitions. */
+
+#define PgmPrint(x) SerialPrint_P(PSTR(x))      // Store and print a string in flash memory.
+#define PgmPrintln(x) SerialPrintln_P(PSTR(x))  // Store and print a string in flash memory followed by a CR/LF.
+
+// Defined so doxygen works for function definitions.
 #endif
 #define NOINLINE __attribute__((noinline,unused))
 #define UNUSEDOK __attribute__((unused))
-//------------------------------------------------------------------------------
-/** Return the number of bytes currently free in RAM. */
+
+// Return the number of bytes currently free in RAM.
 static UNUSEDOK int FreeRam(void) {
   extern int  __bss_end;
   extern int* __brkval;
@@ -52,7 +52,7 @@ static UNUSEDOK int FreeRam(void) {
   return free_memory;
 }
 #ifdef __AVR__
-//------------------------------------------------------------------------------
+
 /**
  * %Print a string in flash memory to the serial port.
  *
@@ -61,7 +61,7 @@ static UNUSEDOK int FreeRam(void) {
 static NOINLINE void SerialPrint_P(PGM_P str) {
   for (uint8_t c; (c = pgm_read_byte(str)); str++) Serial.write(c);
 }
-//------------------------------------------------------------------------------
+
 /**
  * %Print a string in flash memory followed by a CR/LF.
  *

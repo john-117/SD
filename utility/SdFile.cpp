@@ -22,7 +22,7 @@
 #include <avr/pgmspace.h>
 #endif
 #include <Arduino.h>
-//------------------------------------------------------------------------------
+
 // callback function for date/time
 void (*SdFile::dateTime_)(uint16_t* date, uint16_t* time) = NULL;
 
@@ -30,7 +30,7 @@ void (*SdFile::dateTime_)(uint16_t* date, uint16_t* time) = NULL;
 // suppress cpplint warnings with NOLINT comment
 void (*SdFile::oldDateTime_)(uint16_t& date, uint16_t& time) = NULL;  // NOLINT
 #endif  // ALLOW_DEPRECATED_FUNCTIONS
-//------------------------------------------------------------------------------
+
 // add a cluster to a file
 uint8_t SdFile::addCluster() {
   if (!vol_->allocContiguous(1, &curCluster_)) return false;
@@ -42,7 +42,7 @@ uint8_t SdFile::addCluster() {
   }
   return true;
 }
-//------------------------------------------------------------------------------
+
 // Add a cluster to a directory file and zero the cluster.
 // return with first block of cluster in the cache
 uint8_t SdFile::addDirCluster(void) {
@@ -57,14 +57,14 @@ uint8_t SdFile::addDirCluster(void) {
   fileSize_ += 512UL << vol_->clusterSizeShift_;
   return true;
 }
-//------------------------------------------------------------------------------
+
 // cache a file's directory entry
 // return pointer to cached entry or null for failure
 dir_t* SdFile::cacheDirEntry(uint8_t action) {
   if (!SdVolume::cacheRawBlock(dirBlock_, action)) return NULL;
   return SdVolume::cacheBuffer_.dir + dirIndex_;
 }
-//------------------------------------------------------------------------------
+
 /**
  *  Close a file and force cached data and directory information
  *  to be written to the storage device.
@@ -78,7 +78,7 @@ uint8_t SdFile::close(void) {
   type_ = FAT_FILE_TYPE_CLOSED;
   return true;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Check for contiguous file and return its raw block range.
  *
@@ -109,7 +109,7 @@ uint8_t SdFile::contiguousRange(uint32_t* bgnBlock, uint32_t* endBlock) {
     }
   }
 }
-//------------------------------------------------------------------------------
+
 /**
  * Create and open a new contiguous file of a specified size.
  *
@@ -148,7 +148,7 @@ uint8_t SdFile::createContiguous(SdFile* dirFile,
   flags_ |= F_FILE_DIR_DIRTY;
   return sync();
 }
-//------------------------------------------------------------------------------
+
 /**
  * Return a files directory entry
  *
@@ -169,7 +169,7 @@ uint8_t SdFile::dirEntry(dir_t* dir) {
   memcpy(dir, p, sizeof(dir_t));
   return true;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Format the name field of \a dir into the 13 byte array
  * \a name in standard 8.3 short name format.
@@ -186,7 +186,7 @@ void SdFile::dirName(const dir_t& dir, char* name) {
   }
   name[j] = 0;
 }
-//------------------------------------------------------------------------------
+
 /** List directory contents to Serial.
  *
  * \param[in] flags The inclusive OR of
@@ -242,7 +242,7 @@ void SdFile::ls(uint8_t flags, uint8_t indent) {
     }
   }
 }
-//------------------------------------------------------------------------------
+
 // format directory name field from a 8.3 name string
 uint8_t SdFile::make83Name(const char* str, uint8_t* name) {
   uint8_t c;
@@ -276,7 +276,7 @@ uint8_t SdFile::make83Name(const char* str, uint8_t* name) {
   // must have a file name, extension is optional
   return name[0] != ' ';
 }
-//------------------------------------------------------------------------------
+
 /** Make a new directory.
  *
  * \param[in] dir An open SdFat instance for the directory that will containing
@@ -342,7 +342,7 @@ uint8_t SdFile::makeDir(SdFile* dir, const char* dirName) {
   // write first block
   return SdVolume::cacheFlush();
 }
-//------------------------------------------------------------------------------
+
 /**
  * Open a file or directory by name.
  *
@@ -466,7 +466,7 @@ uint8_t SdFile::open(SdFile* dirFile, const char* fileName, uint8_t oflag) {
   // open entry in cache
   return openCachedEntry(dirIndex_, oflag);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Open a file by index.
  *
@@ -505,7 +505,7 @@ uint8_t SdFile::open(SdFile* dirFile, uint16_t index, uint8_t oflag) {
   // open cached entry
   return openCachedEntry(index & 0XF, oflag);
 }
-//------------------------------------------------------------------------------
+
 // open a cached directory entry. Assumes vol_ is initializes
 uint8_t SdFile::openCachedEntry(uint8_t dirIndex, uint8_t oflag) {
   // location of entry in cache
@@ -544,7 +544,7 @@ uint8_t SdFile::openCachedEntry(uint8_t dirIndex, uint8_t oflag) {
   if (oflag & O_TRUNC) return truncate(0);
   return true;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Open a volume's root directory.
  *
@@ -584,7 +584,7 @@ uint8_t SdFile::openRoot(SdVolume* vol) {
   dirIndex_ = 0;
   return true;
 }
-//------------------------------------------------------------------------------
+
 /** %Print the name field of a directory entry in 8.3 format to Serial.
  *
  * \param[in] dir The directory structure containing the name.
@@ -610,7 +610,7 @@ void SdFile::printDirName(const dir_t& dir, uint8_t width) {
     w++;
   }
 }
-//------------------------------------------------------------------------------
+
 /** %Print a directory date field to Serial.
  *
  *  Format is yyyy-mm-dd.
@@ -624,7 +624,7 @@ void SdFile::printFatDate(uint16_t fatDate) {
   Serial.print('-');
   printTwoDigits(FAT_DAY(fatDate));
 }
-//------------------------------------------------------------------------------
+
 /** %Print a directory time field to Serial.
  *
  * Format is hh:mm:ss.
@@ -638,7 +638,7 @@ void SdFile::printFatTime(uint16_t fatTime) {
   Serial.print(':');
   printTwoDigits(FAT_SECOND(fatTime));
 }
-//------------------------------------------------------------------------------
+
 /** %Print a value as two digits to Serial.
  *
  * \param[in] v Value to be printed, 0 <= \a v <= 99
@@ -650,7 +650,7 @@ void SdFile::printTwoDigits(uint8_t v) {
   str[2] = 0;
   Serial.print(str);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Read data from a file starting at the current position.
  *
@@ -717,7 +717,7 @@ int16_t SdFile::read(void* buf, uint16_t nbyte) {
   }
   return nbyte;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Read the next directory entry from a directory file.
  *
@@ -745,7 +745,7 @@ int8_t SdFile::readDir(dir_t* dir) {
   // error, end of file, or past last entry
   return n < 0 ? -1 : 0;
 }
-//------------------------------------------------------------------------------
+
 // Read next directory entry into the cache
 // Assumes file is correctly positioned
 dir_t* SdFile::readDirCache(void) {
@@ -764,7 +764,7 @@ dir_t* SdFile::readDirCache(void) {
   // return pointer to entry
   return (SdVolume::cacheBuffer_.dir + i);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Remove a file.
  *
@@ -796,7 +796,7 @@ uint8_t SdFile::remove(void) {
   // write entry to SD
   return SdVolume::cacheFlush();
 }
-//------------------------------------------------------------------------------
+
 /**
  * Remove a file.
  *
@@ -820,7 +820,7 @@ uint8_t SdFile::remove(SdFile* dirFile, const char* fileName) {
   if (!file.open(dirFile, fileName, O_WRITE)) return false;
   return file.remove();
 }
-//------------------------------------------------------------------------------
+
 /** Remove a directory file.
  *
  * The directory file will be removed only if it is empty and is not the
@@ -858,7 +858,7 @@ uint8_t SdFile::rmDir(void) {
   flags_ |= O_WRITE;
   return remove();
 }
-//------------------------------------------------------------------------------
+
 /** Recursively delete a directory and all contained files.
  *
  * This is like the Unix/Linux 'rm -rf *' if called with the root directory
@@ -912,7 +912,7 @@ uint8_t SdFile::rmRfStar(void) {
   if (isRoot()) return true;
   return rmDir();
 }
-//------------------------------------------------------------------------------
+
 /**
  * Sets a file's position.
  *
@@ -952,7 +952,7 @@ uint8_t SdFile::seekSet(uint32_t pos) {
   curPosition_ = pos;
   return true;
 }
-//------------------------------------------------------------------------------
+
 /**
  * The sync() call causes all modified data and directory fields
  * to be written to the storage device.
@@ -987,7 +987,7 @@ uint8_t SdFile::sync(void) {
   }
   return SdVolume::cacheFlush();
 }
-//------------------------------------------------------------------------------
+
 /**
  * Set a file's timestamps in its directory entry.
  *
@@ -1057,7 +1057,7 @@ uint8_t SdFile::timestamp(uint8_t flags, uint16_t year, uint8_t month,
   SdVolume::cacheSetDirty();
   return sync();
 }
-//------------------------------------------------------------------------------
+
 /**
  * Truncate a file to a specified length.  The current file position
  * will be maintained if it is less than or equal to \a length otherwise
@@ -1112,7 +1112,7 @@ uint8_t SdFile::truncate(uint32_t length) {
   // set file to correct position
   return seekSet(newPos);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Write data to an open file.
  *
@@ -1222,7 +1222,7 @@ size_t SdFile::write(const void* buf, uint16_t nbyte) {
   setWriteError();
   return 0;
 }
-//------------------------------------------------------------------------------
+
 /**
  * Write a byte to a file. Required by the Arduino Print class.
  *
@@ -1231,7 +1231,7 @@ size_t SdFile::write(const void* buf, uint16_t nbyte) {
 size_t SdFile::write(uint8_t b) {
   return write(&b, 1);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Write a string to a file. Used by the Arduino Print class.
  *
@@ -1241,7 +1241,7 @@ size_t SdFile::write(const char* str) {
   return write(str, strlen(str));
 }
 #ifdef __AVR__
-//------------------------------------------------------------------------------
+
 /**
  * Write a PROGMEM string to a file.
  *
@@ -1250,7 +1250,7 @@ size_t SdFile::write(const char* str) {
 void SdFile::write_P(PGM_P str) {
   for (uint8_t c; (c = pgm_read_byte(str)); str++) write(c);
 }
-//------------------------------------------------------------------------------
+
 /**
  * Write a PROGMEM string followed by CR/LF to a file.
  *
